@@ -52,6 +52,10 @@ class DatabaseGUI:
         self.data_ops_menu.add_command(label="Insert Record", command=self.insert_record)
         self.data_ops_menu.add_command(label="Update Record", command=self.update_record)
         self.data_ops_menu.add_command(label="Delete Record", command=self.delete_record)
+        self.data_ops_menu.add_command(label="Make Payment", command=self.make_payment)
+        self.data_ops_menu.add_command(label="Assign Player", command=self.assign_player)
+        self.recent_player = {}
+
 
         # Exit
         self.exit_menu.add_command(label="Quit", command=self.show_exit)
@@ -205,6 +209,53 @@ class DatabaseGUI:
             row=len(fields), column=0, columnspan=2, pady=10
         )
 
+    def assign_player(self):
+        self.current_table = "team_player"
+        # Get column metadata
+        self.cursor.execute(f"SHOW COLUMNS FROM {self.current_table}")
+        cols = self.cursor.fetchall()
+        # Exclude AUTO_INCREMENT
+        fields = [col[0] for col in cols if "auto_increment" not in col[5]]
+
+        form = tk.Toplevel(self.root)
+        form.title(f"Insert into {self.current_table}")
+        entries = {}
+        for i, name in enumerate(fields):
+            ttk.Label(form, text=name).grid(row=i, column=0, padx=5, pady=5, sticky="e")
+            ent = ttk.Entry(form)
+            ent.grid(row=i, column=1, padx=5, pady=5, sticky="w")
+            entries[name] = ent
+
+        def do_insert():
+            vals = [entries[f].get() or None for f in fields]
+            sql = f"INSERT INTO {self.current_table} ({','.join(fields)}) VALUES ({','.join(['%s'] * len(fields))})"
+            # used google ai overview
+            if self.recent_player.__len__() != 0:
+                if self.recent_player.get(vals[1]) != None:
+                    if (
+                        self.recent_player.get(vals[1]) - datetime.today()
+                    ).total_seconds() / 3600 < 3:
+                        messagebox.showerror(
+                            "Insert Error", "You need to wait before adding same player"
+                        )
+                        form.destroy()
+                        self.show_table_data(self.current_table)
+                        return
+            try:
+                self.cursor.execute(sql, vals)
+                self.conn.commit()
+                messagebox.showinfo("Success", "Record inserted.")
+                form.destroy()
+                self.show_table_data(self.current_table)
+                self.recent_player[vals[1]] = datetime.today()
+            except mysql.connector.Error as e:
+                form.destroy()
+                messagebox.showerror("Insert Error", str(e))
+
+        ttk.Button(form, text="Insert", command=do_insert).grid(
+            row=len(fields), column=0, columnspan=2, pady=10
+        )
+
     def update_record(self):
         if not self.current_table:
             return messagebox.showerror("Error", "Please select a table first.")
@@ -254,6 +305,46 @@ class DatabaseGUI:
         ttk.Button(form, text="Update", command=do_update).grid(
             row=len(cols), column=0, columnspan=2, pady=10
         )
+
+     def make_payment(self):
+        self.current_table = "Payment"
+        # Get column metadata
+        self.cursor.execute(f"SHOW COLUMNS FROM {self.current_table}")
+        cols = self.cursor.fetchall()
+        # Exclude AUTO_INCREMENT
+        fields = [col[0] for col in cols if "auto_increment" not in col[5]]
+        fields.remove("payment_date")
+        fields.append("ClubMemberID")
+
+        form = tk.Toplevel(self.root)
+        form.title(f"Insert into {self.current_table}")
+        entries = {}
+        for i, name in enumerate(fields):
+            ttk.Label(form, text=name).grid(row=i, column=0, padx=5, pady=5, sticky="e")
+            ent = ttk.Entry(form)
+            ent.grid(row=i, column=1, padx=5, pady=5, sticky="w")
+            entries[name] = ent
+
+        def do_insert():
+            vals = [entries[f].get() or None for f in fields]
+            sql = f"INSERT INTO Payment (payment_method,payment_amount ,payment_date) VALUES ('{vals[0]}','{vals[1]}',CURDATE())"
+            sql2 = f"INSERT INTO cm_payment (payment_id,cm_id ,membership_year) VALUES (last_insert_id(),{vals[2]},YEAR(CURDATE())+1)"
+            try:
+                self.cursor.execute(sql)
+                self.conn.commit()
+                self.cursor.execute(sql2)
+                self.conn.commit()
+                messagebox.showinfo("Success", "Record updated.")
+                form.destroy()
+                self.show_table_data(self.current_table)
+                print(self.conn.cmd_query(get_id))
+            except mysql.connector.Error as e:
+                messagebox.showerror("Insert Error", str(e))
+
+        ttk.Button(form, text="Insert", command=do_insert).grid(
+            row=len(fields), column=0, columnspan=2, pady=10
+        )
+
 
     def delete_record(self):
         if not self.current_table:
