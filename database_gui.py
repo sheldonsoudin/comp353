@@ -306,7 +306,7 @@ class DatabaseGUI:
             row=len(cols), column=0, columnspan=2, pady=10
         )
 
-     def make_payment(self):
+    def make_payment(self):
         self.current_table = "Payment"
         # Get column metadata
         self.cursor.execute(f"SHOW COLUMNS FROM {self.current_table}")
