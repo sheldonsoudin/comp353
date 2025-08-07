@@ -5,17 +5,66 @@ database = "gtc353_1"  # e.g., "volleyball_club"
 
 # Add your queries here and please label them question wise
 queries = [
-    "SELECT * FROM ClubMember",  # Question number 1
-    "",  # Question number 2
-    "",  # Question number 2
-    "",  # Question number 2
-    "",  # Question number 2
-    "",  # Question number 2
-    "",  # Question number 2
-    # 8
-    # used gemini
+    # 1
     """
-        
+     SELECT location_id, name, type, phone_number, web_address, address, city, province, postal_code, max_capacity
+    FROM Location
+    ORDER BY province, city
+    
+    """,
+
+    # 2
+    """
+    SELECT pl.personnel_id, p.first_name, p.last_name, pl.location_id, pl.role, pl.mandate, pl.start_date, pl.end_date
+    FROM personnel_location pl
+    JOIN Personnel per ON pl.personnel_id = per.personnel_id
+    JOIN Person p ON per.person_id = p.person_id
+    ORDER BY pl.location_id, p.last_name
+    """,
+
+    #3
+    """
+    SELECT fm.fm_id, p.first_name, p.last_name, 'Primary' AS type
+    FROM FamilyMember fm
+    JOIN Person p ON fm.person_id = p.person_id
+    UNION ALL
+    SELECT sf.secondary_fm_id, p.first_name, p.last_name, 'Secondary' AS type
+    FROM secondary_fm sf
+    JOIN FamilyMember fm2 ON sf.secondary_fm_id = fm2.fm_id
+    JOIN Person p ON fm2.person_id = p.person_id ORDER BY type, last_name
+    """,
+
+
+
+    #4
+    """
+       SELECT cm.cm_id, p.first_name, p.last_name,
+              TIMESTAMPDIFF(YEAR, p.dob, CURDATE()) AS age,
+              cm.height, cm.weight, cm.gender,
+              cm.membership_status, cm.last_paid_year
+       FROM ClubMember cm
+         JOIN Person p ON cm.person_id = p.person_id ORDER BY age DESC
+       """,
+
+    #5
+    """
+    SELECT t.team_name, s.session_id, s.date, s.start_time, s.end_time, s.address, ts.score
+    FROM team_session ts
+    JOIN Team t ON ts.team_id = t.team_id
+    JOIN Sessions s ON ts.session_id = s.session_id ORDER BY s.date, s.start_time
+    """,
+
+
+
+# Query 6 placeholder
+    "SELECT 'Query 6 placeholder' AS note",
+    # Query 7 placeholder
+    "SELECT 'Query 7 placeholder' AS note",
+
+
+    # 8
+    """
+
         with 
         table1 as 
         ( 
@@ -92,96 +141,193 @@ queries = [
     # 9
     """
 
-	with table1 as  
+	with 
+	table1 as (  
 
-(  
+    	select FamilyMember.fm_id,
+    		Person.first_name,
+    		Person.last_name,
+    		Person.telephone FROM FamilyMember,
+    		family_association,
+    		secondary_fm,
+    		Person 
+    	WHERE FamilyMember.fm_id = 1 
+    		AND FamilyMember.fm_id = family_association.fm_id 
+    		AND FamilyMember.fm_id = secondary_fm.fm_id 
+    		AND Person.person_id = FamilyMember.person_id  
 
-select FamilyMember.fm_id,Person.first_name, Person.last_name, Person.telephone  
+	),  
 
-FROM FamilyMember, family_association, secondary_fm, Person  
+	table2 as (  
 
-WHERE FamilyMember.fm_id = 1 AND FamilyMember.fm_id = family_association.fm_id AND FamilyMember.fm_id = secondary_fm.fm_id AND Person.person_id = FamilyMember.person_id  
+    	select FamilyMember.fm_id,
+   		ClubMember.cm_id,
+    		Person.first_name,
+    		Person.last_name,
+    		Person.dob,
+    		Person.ssn,
+    		Person.mcn,
+    		Person.telephone ,
+    		Person.address,
+    		Person.city,
+    		Person.province,
+    		Person.postal_code,
+    		family_association.relationship 
+    	from family_association, FamilyMember, Person, ClubMember 
+    	where Person.person_id= ClubMember.person_id 
+    		and FamilyMember.fm_id = family_association.fm_id 
+    		and ClubMember.cm_id = family_association.cm_id 
+    		and FamilyMember.fm_id = 1 
+    		and family_association.fm_id = 1  
 
-),  
+	) 
 
-table2 as  
+	select table1.first_name as secondaryfirstname,
+		table1.last_name as secondarylasttname,
+		table1.telephone as secondarytelephone,
+		table2.cm_id as associateid,
+		table2.first_name as associatefirsname,
+		table2.last_name as associatelastname,
+		table2.dob as associatedob,
+		table2.ssn as associatessn,
+		table2.mcn as associatemcn,
+		table2.telephone as associate,
+		table2.address,
+		table2.city,
+		table2.province,
+		table2.postal_code,
+		table2.relationship 
+	FROM table1 ,table2 
+	WHERE table1.fm_id = table2.fm_id; 
 
-(  
-
-select FamilyMember.fm_id, ClubMember.cm_id, Person.first_name, Person.last_name, Person.dob, Person.ssn, Person.mcn, Person.telephone , Person.address, Person.city, Person.province, Person.postal_code, family_association.relationship  
-
-from family_association, FamilyMember, Person, ClubMember  
-
-where Person.person_id= ClubMember.person_id and FamilyMember.fm_id = family_association.fm_id and ClubMember.cm_id = family_association.cm_id and FamilyMember.fm_id = 1 and family_association.fm_id = 1  
-
-) 
-
-select distinctrow (table1.first_name) as secondaryfirstname, table1.last_name as secondarylasttname, table1.telephone as secondarytelephone, table2.cm_id as associateid, table2.first_name as associatefirsname, table2.last_name as associatelastname, table2.dob as associatedob, table2.ssn as associatessn, table2.mcn as associatemcn, table2.telephone as associate, table2.address, table2.city, table2.province, table2.postal_code, table2.relationship 
-
- FROM table1 , table2 WHERE table1.fm_id = table2.fm_id; 
 
 
 
 	""",
     # 10
     """
-with table1 as  
+with table1 as (  
 
-(  
+    select Sessions.session_id,
+    Person.first_name as Coachfirsname,
+    Person.last_name as coachlastname,
+    Sessions.start_time,
+    Sessions.address,
+    Team.team_name,
+    team_session.score 
+    from Sessions,
+    team_session,
+    Team,
+    ClubMember,
+    Person 
+    where 
+    Sessions.address = '123 Main St, Montreal'
+    and Sessions.date between '2025-07-01' and '2025-10-30' 
+    and Sessions.session_id = team_session.session_id 
+    and Sessions.session_id = Team.team_id 
+    and Team.captain_id = ClubMember.cm_id 
+    and ClubMember.person_id = Person.person_id 
 
-select Sessions.session_id, Person.first_name as Coachfirsname, Person.last_name as coachlastname, Sessions.start_time, Sessions.address, Team.team_name, team_session.score ,Team.team_id 
+), table2 as(  
 
-from Sessions, team_session, Team, ClubMember, Person  
+    select Sessions.session_id,
+    Person.first_name as playerfirstname,
+    Person.last_name as playerlastname,
+    team_player.role from Sessions,
+    team_session,
+    Team,
+    team_player,
+    Person,
+    ClubMember 
+    where Sessions.address = '123 Main St, Montreal' 
+    and Sessions.date between '2025-07-01' and '2025-10-30' 
+    and team_session.team_id = Team.team_id
+    and team_session.session_id = Sessions.session_id 
+    and team_player.cm_id = ClubMember.cm_id 
+    and team_player.team_id = Team.team_id 
+    and ClubMember.person_id = Person.person_id 
+    )  
 
-where Sessions.address = '123 Main St, Montreal' and Sessions.date between '2025-07-01' and '2025-10-30' and Sessions.session_id = team_session.session_id and Team.team_id = team_session.team_id and Team.captain_id = ClubMember.cm_id and ClubMember.person_id = Person.person_id  
-
-),  
-
-table2 as  
-
-(  
-
-select Sessions.session_id,Person.first_name as playerfirstname, Person.last_name as playerlastname, team_player.role , Team.team_id  
-
-from Sessions, team_session, Team, team_player, Person,ClubMember  
-
-where Sessions.address = '123 Main St, Montreal' and Sessions.date between '2025-07-01' and '2025-10-30' and team_session.team_id = Team.team_id and team_session.session_id = Sessions.session_id and team_player.cm_id = ClubMember.cm_id and team_player.team_id = Team.team_id and ClubMember.person_id = Person.person_id  
-
-)  
-
-select table1.session_id, table1.Coachfirsname, table1.coachlastname, table1.start_time,table1.address, table1.team_name, table1.score,table2.playerfirstname, table2.playerlastname, table2.role  
-
-from table1,table2 where table1.session_id = table2.session_id and table1.team_id = table2.team_id  
-
-order by start_time asc
-    """,  
+select table1.session_id,
+	table1.Coachfirsname,
+	table1.coachlastname,
+	table1.start_time,
+	table1.address,
+	table1.team_name,
+	table1.score,
+	table2.playerfirstname,
+	table2.playerlastname,
+	table2.role from table1,
+	table2 
+where table1.session_id = table2.session_id 
+order by start_time asc 
+    """,
     # 11
     """
-       select ClubMember.cm_id, Person.first_name, Person.last_name  
-
-from ClubMember, cm_location, Location,cm_payment,Person  
-
-where ClubMember.membership_status = 'Inactive' and cm_location.cm_id = ClubMember.cm_id and cm_location.location_id = Location.location_id and cm_payment.cm_id = ClubMember.cm_id and ClubMember.person_id = Person.person_id  
-
-group by ClubMember.cm_id having count(cm_location.cm_id) >= 2 and count(cm_payment.membership_year) >= 2 order by ClubMember.cm_id asc 
+        select ClubMember.cm_id,
+        	Person.first_name,
+       		Person.last_name from ClubMember,
+        	cm_location,
+        	Location,
+        	cm_payment,
+        	Person 
+        where ClubMember.membership_status = 'Inactive' 
+        	and cm_location.cm_id = ClubMember.cm_id 
+        	and cm_location.location_id = Location.location_id 
+        	and cm_payment.cm_id = ClubMember.cm_id 
+        	and ClubMember.person_id = Person.person_id 
+        group by ClubMember.cm_id 
+        having count(cm_location.cm_id) >= 2 and count(cm_payment.membership_year) >= 2 
+        order by ClubMember.cm_id asc
     """,
     # 12
     """
-	with table1 as  
+	with 
+	table1 as 
+	( 
 
-(  
+	select Location.name,
+		count(distinct(Sessions.session_id)) as numberoftrainingsession,
+		count(distinct(team_player.cm_id)) as numberofplayerstrainingsession from Sessions, 
+		Location,
+		team_session,
+		Team,
+		team_player 
+	where Sessions.date between '2025-06-01' and '2025-09-01' 
+		and (Sessions.address = concat(Location.address, ', ', Location.city) or Sessions.address = Location.address) 
+		and Team.team_id = team_session.team_id 
+		and team_session.session_id = Sessions.session_id 
+		and Team.team_id = team_player.team_id 
+		and team_player.team_id = Team.team_id 
+		and Sessions.session_type = 'Training' 
+	group by Location.name
 
-select Location.name,count(distinct(Sessions.session_id)) as numberoftrainingsession, count(distinct(team_player.cm_id)) as numberofplayerstrainingsession from Sessions, Location, team_player, Team,team_session 
+ 	), 
+	table2 as 
 
-where Sessions.session_id = team_session.session_id and team_session.team_id = Team.team_id and team_player.team_id = Team.team_id and Sessions.date between ('2025-06-01' and '2025-09-01' ) and Sessions.session_type = 'Training' and (Sessions.address = concat(Location.address, ', ', Location.city) or Sessions.address = Location.address) group by Location.name ), 
+	(
 
-table2 as  
+	select Location.name,
+		count(distinct(Sessions.session_id)) as numberofgamesession,
+		count(distinct(team_player.cm_id)) as numberofplayersgamesession from Sessions,
+		Location,
+		team_session,
+		Team,
+		team_player 
+	where Sessions.date between '2025-06-01' and '2025-09-01' 
+		and (Sessions.address = concat(Location.address, ', ', Location.city) or Sessions.address = Location.address) 
+		and Team.team_id = team_session.team_id 
+		and team_session.session_id = Sessions.session_id 
+		and Team.team_id = team_player.team_id 
+		and team_player.team_id = Team.team_id 
+		and Sessions.session_type = 'Game' group by Location.name 
 
-( 
+	)
 
-select Location.name,count(distinct(Sessions.session_id)) as numberofgamesession, count(distinct(team_player.cm_id)) as numberofplayersgamesession from Sessions, Location, team_player, Team,team_session 
-
-where Sessions.session_id = team_session.session_id and team_session.team_id = Team.team_id and team_player.team_id = Team.team_id and Sessions.date between ('2025-06-01' and '2025-09-01' ) and Sessions.session_type = 'Game' and (Sessions.address = concat(Location.address, ', ', Location.city) or Sessions.address = Location.address) group by Location.name ) select Location.name, numberoftrainingsession, numberofplayerstrainingsession,numberofgamesession, numberofplayersgamesession from table1,table2, Location where table1.name = Location.name and table2.name=Location.name order by numberofgamesession desc 
+	select * from table1,
+	table2 
+	where table1.name = table2.name 
+	order by numberofgamesession desc 
 
     """,
     # /*13. */
@@ -239,8 +385,8 @@ FROM Person
 	JOIN team_player ON ClubMember.cm_id = team_player.cm_id
 	JOIN team_session ON team_player.team_id = team_session.team_id 
 WHERE ClubMember.membership_status = 'Active'
-	AND ClubMember.cm_id IN (SELECT cm_id FROM team_player WHERE role = 'setter')
-	AND ClubMember.cm_id NOT IN (SELECT cm_id FROM team_player WHERE role != 'setter')
+	AND ClubMember.cm_id IN (SELECT cm_id FROM team_player WHERE role = 'setters')
+	AND ClubMember.cm_id NOT IN (SELECT cm_id FROM team_player WHERE role != 'setters')
 ORDER BY Location.name ASC, ClubMember.cm_id;
 """,
     # /*16. */
